@@ -6,10 +6,18 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas import Token
 from app.security import authenticate_moderator, create_access_token
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["🔐 Authentication"])
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="🔐 Moderator login",
+    description=(
+        "Authenticate a WhistleDrop moderator and receive a JWT access token "
+        "for protected report-management operations."
+    ),
+)
 def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     if not authenticate_moderator(form_data.username, form_data.password):
         raise HTTPException(

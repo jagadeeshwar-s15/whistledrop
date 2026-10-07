@@ -18,8 +18,7 @@ from app.schemas import (
 )
 
 logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(prefix="/reports", tags=["📝 Reports"])
 
 # 32 unambiguous characters (no 0/O, 1/I) -> 5 bits each; 16 chars = 80 bits of entropy.
 _CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -31,7 +30,17 @@ def generate_case_code() -> str:
     return "WD-" + "-".join(chars[i: i + 4] for i in range(0, 16, 4))
 
 
-@router.post("", response_model=ReportCreated, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ReportCreated,
+    status_code=status.HTTP_201_CREATED,
+    summary="📝 Submit an anonymous report",
+    description=(
+        "Submit a confidential report without creating an account or "
+        "providing personal information. A unique case code is generated "
+        "and returned for anonymous status tracking."
+    ),
+)
 def create_report(payload: ReportCreate, db: Session = Depends(get_db)) -> Report:
     for _ in range(_MAX_CODE_ATTEMPTS):
         report = Report(
@@ -65,7 +74,15 @@ def create_report(payload: ReportCreate, db: Session = Depends(get_db)) -> Repor
     )
 
 
-@router.get("", response_model=list[ModeratorReport])
+@router.get(
+    "",
+    response_model=list[ModeratorReport],
+    summary="🛡️ List and filter reports",
+    description=(
+        "View submitted reports as an authenticated moderator. "
+        "Reports can be filtered by status or category."
+    ),
+)
 def list_reports(
     status_filter: ReportStatus | None = None,
     category: str | None = None,
@@ -85,7 +102,16 @@ def list_reports(
     return list(db.scalars(query).all())
 
 
-@router.patch("/{case_code}", response_model=ModeratorReport)
+@router.patch(
+    "/{case_code}",
+    response_model=ModeratorReport,
+    summary="🛡️ Update a report",
+    description=(
+        "Update the status and status update of a report as an "
+        "authenticated moderator. Status changes must follow the "
+        "WhistleDrop workflow."
+    ),
+)
 def update_report(
     case_code: str,
     report_update: ModeratorReportUpdate,
@@ -132,7 +158,16 @@ def update_report(
     return report
 
 
-@router.get("/{case_code}", response_model=ReportTracking)
+@router.get(
+    "/{case_code}",
+    response_model=ReportTracking,
+    summary="🔎 Track a report anonymously",
+    description=(
+        "Check the current status and latest update of a report "
+        "using its unique case code. No account or personal information "
+        "is required."
+    ),
+)
 def get_report(
     case_code: str = Path(min_length=1, max_length=32),
     db: Session = Depends(get_db),
